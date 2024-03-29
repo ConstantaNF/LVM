@@ -16,7 +16,7 @@
 
 ### **Выполнение** ###
 
-Задание выполняется на рабочей станции с ОС Ubuntu 22.04.4 LTS с заранее установленными Vagrant 2.4.1 и VirtualBox 7.0. Перед выполнением предварительно подготовлен репозиторий
+Задание выполняется на рабочей станции с ОС Ubuntu 22.04.4 LTS с заранее установленными Vagrant 2.4.1 и VirtualBox 7.0. Перед выполнением предварительно подготовлен репозиторий <https://github.com/ConstantaNF/LVM.git>
 
 ### **Подготовка окружения** ###
 
@@ -24,7 +24,8 @@
 
 Теперь Vagrantfile выглядит так:
 
-```# -*- mode: ruby -*-
+```
+# -*- mode: ruby -*-
 # vim: set ft=ruby :
 home = ENV['HOME']
 ENV["LC_ALL"] = "en_US.UTF-8"
@@ -99,15 +100,19 @@ Vagrant.configure("2") do |config|
   
         end
     end
-  end```
+  end
+```
   
 Стартую ВМ:
 
-```adminkonstantin@2OSUbuntu:~/LVM$ vagrant up```
+```
+adminkonstantin@2OSUbuntu:~/LVM$ vagrant up
+```
 
 Результат:
 
-```Bringing machine 'lvm' up with 'virtualbox' provider...
+```
+Bringing machine 'lvm' up with 'virtualbox' provider...
 ==> lvm: Importing base box 'centos/7'...
 ==> lvm: Matching MAC address for NAT networking...
 ==> lvm: Checking if box 'centos/7' version '1804.02' is up to date...
@@ -235,40 +240,56 @@ Vagrant.configure("2") do |config|
     lvm:   libreport-filesystem.x86_64 0:2.1.11-53.el7.centos
     lvm:   mailx.x86_64 0:12.5-19.el7
     lvm: 
-    lvm: Complete!```
+    lvm: Complete!
+```
 
 Подключаюсь к созданной ВМ по SSH:
 
-```adminkonstantin@2OSUbuntu:~/LVM$ vagrant ssh```
+```
+adminkonstantin@2OSUbuntu:~/LVM$ vagrant ssh
+```
 
 Успешное подключение:
 
-```[vagrant@lvm ~]$ ```
+```
+[vagrant@lvm ~]$
+```
 
 Подключаюсь в УЗ root:
 
-```[vagrant@lvm ~]$ sudo -i```
+```
+[vagrant@lvm ~]$ sudo -i
+```
 
 Результат:
 
-```[root@lvm ~]# ```
+```
+[root@lvm ~]#
+```
 
 ### **Уменьшить том под / до 8G** ###
 
 Подготовим временный том для / раздела:
 
-```[root@lvm ~]# pvcreate /dev/sdb
-     Physical volume "/dev/sdb" successfully created.```
+```
+[root@lvm ~]# pvcreate /dev/sdb
+   Physical volume "/dev/sdb" successfully created.
+```
 
-```[root@lvm ~]# vgcreate vg_root /dev/sdb
-     Volume group "vg_root" successfully created```
+```
+[root@lvm ~]# vgcreate vg_root /dev/sdb
+   Volume group "vg_root" successfully created
+```
 
-```[root@lvm ~]# lvcreate -n lv_root -l +100%FREE /dev/vg_root
-     Logical volume "lv_root" created.```
+```
+[root@lvm ~]# lvcreate -n lv_root -l +100%FREE /dev/vg_root
+   Logical volume "lv_root" created.
+```
 
 Создадим на нем файловую систему и смонтируем его, чтобы перенести туда данные:
 
-```[root@lvm ~]# mkfs.xfs /dev/vg_root/lv_root
+```
+[root@lvm ~]# mkfs.xfs /dev/vg_root/lv_root
 meta-data=/dev/vg_root/lv_root   isize=512    agcount=4, agsize=655104 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -277,13 +298,17 @@ data     =                       bsize=4096   blocks=2620416, imaxpct=25
 naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
 log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
-realtime =none                   extsz=4096   blocks=0, rtextents=0```
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+```
 
-```[root@lvm ~]# mount /dev/vg_root/lv_root /mnt```
+```
+[root@lvm ~]# mount /dev/vg_root/lv_root /mnt
+```
 
 Копируем все данные с раздела / в /mnt:
 
-```[root@lvm ~]# xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
+```
+[root@lvm ~]# xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
 xfsdump: using file dump (drive_simple) strategy
 xfsdump: version 3.1.7 (dump format 3.0)
 xfsdump: level 0 dump of lvm:/
@@ -325,24 +350,32 @@ xfsdump: dump size (non-dir files) : 863101224 bytes
 xfsdump: dump complete: 34 seconds elapsed
 xfsdump: Dump Status: SUCCESS
 xfsrestore: restore complete: 35 seconds elapsed
-xfsrestore: Restore Status: SUCCESS```
+xfsrestore: Restore Status: SUCCESS
+```
 
 Cконфигурируем grub для того, чтобы при старте перейти в новый /. Сымитируем текущий root, сделаем в него chroot и обновим grub:
 
-```[root@lvm ~]# for i in /proc/ /sys/ /dev/ /run/ /boot/; \
->  do mount --bind $i /mnt/$i; done```
+```
+[root@lvm ~]# for i in /proc/ /sys/ /dev/ /run/ /boot/; \
+>  do mount --bind $i /mnt/$i; done
+```
 
-```[root@lvm ~]# chroot /mnt/```
+```
+[root@lvm ~]# chroot /mnt/
+```
 
-```[root@lvm /]# grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+[root@lvm /]# grub2-mkconfig -o /boot/grub2/grub.cfg
 Generating grub configuration file ...
 Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
 Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
-done```
+done
+```
 
 Обновим образ initrd:
 
-```[root@lvm /]# cd /boot ; for i in `ls initramfs-*img`; \
+```
+[root@lvm /]# cd /boot ; for i in `ls initramfs-*img`; \
 > do dracut -v $i `echo $i|sed "s/initramfs-//g; \
 > > s/.img//g"` --force; done
 sed: -e expression #1, char 18: unknown command: `>'
@@ -399,7 +432,8 @@ Skipping udev rule: 91-permissions.rules
 *** Store current command line parameters ***
 *** Creating image file ***
 *** Creating image file done ***
-*** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***```
+*** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***
+```
 
 Для того, чтобы при загрузке был смонтирован нужный root нужно в файле
 `/boot/grub2/grub.cfg` заменить `rd.lvm.lv=VolGroup00/LogVol00` на `rd.lvm.lv=vg_root/lv_root`
@@ -407,7 +441,8 @@ Skipping udev rule: 91-permissions.rules
 
 Проверим изменения:
 
-```[root@lvm boot]# lsblk
+```
+[root@lvm boot]# lsblk
 NAME                    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 sda                       8:0    0   40G  0 disk 
 ├─sda1                    8:1    0    1M  0 part 
@@ -419,24 +454,30 @@ sdb                       8:16   0   10G  0 disk
 └─vg_root-lv_root       253:2    0   10G  0 lvm  /
 sdc                       8:32   0    2G  0 disk 
 sdd                       8:48   0    1G  0 disk 
-sde                       8:64   0    1G  0 disk ```
+sde                       8:64   0    1G  0 disk
+```
 
 Перезагружаем ВМ.
 
 Теперь нам нужно изменить размер старой VG и вернуть на него рут. Для этого удаляем старый LV размером в 40G и создаём новый на 8G:
 
-```[root@lvm ~]# lvremove /dev/VolGroup00/LogVol00
+```
+[root@lvm ~]# lvremove /dev/VolGroup00/LogVol00
 Do you really want to remove active logical volume VolGroup00/LogVol00? [y/n]: y
-  Logical volume "LogVol00" successfully removed```
+  Logical volume "LogVol00" successfully removed
+```
 
-  ```[root@lvm ~]# lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00
+```
+[root@lvm ~]# lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00
 WARNING: xfs signature detected on /dev/VolGroup00/LogVol00 at offset 0. Wipe it? [y/n]: y
   Wiping xfs signature on /dev/VolGroup00/LogVol00.
-  Logical volume "LogVol00" created.```
+  Logical volume "LogVol00" created.
+```
 
   Создадим файловую систему на новом LV и смонтируем его, чтобы перенести туда данные:
 
-  ```[root@lvm ~]# mkfs.xfs /dev/VolGroup00/LogVol00
+  ```
+[root@lvm ~]# mkfs.xfs /dev/VolGroup00/LogVol00
 meta-data=/dev/VolGroup00/LogVol00 isize=512    agcount=4, agsize=524288 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -445,13 +486,17 @@ data     =                       bsize=4096   blocks=2097152, imaxpct=25
 naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
 log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
-realtime =none                   extsz=4096   blocks=0, rtextents=0```
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+```
 
-```[root@lvm ~]# mount /dev/VolGroup00/LogVol00 /mnt```
+```
+root@lvm ~]# mount /dev/VolGroup00/LogVol00 /mnt
+```
 
 Копируем все данные с раздела / в /mnt:
 
-```[root@lvm ~]# xfsdump -J - /dev/vg_root/lv_root | \
+```
+[root@lvm ~]# xfsdump -J - /dev/vg_root/lv_root | \
 >  xfsrestore -J - /mnt
 xfsrestore: using file dump (drive_simple) strategy
 xfsrestore: version 3.1.7 (dump format 3.0)
@@ -494,22 +539,30 @@ xfsdump: dump size (non-dir files) : 861739184 bytes
 xfsdump: dump complete: 23 seconds elapsed
 xfsdump: Dump Status: SUCCESS
 xfsrestore: restore complete: 23 seconds elapsed
-xfsrestore: Restore Status: SUCCESS```
+xfsrestore: Restore Status: SUCCESS
+```
 
 Так же как в первый раз cконфигурируем grub, за исключением правки `/etc/grub2/grub.cfg`:
 
-```[root@lvm ~]# for i in /proc/ /sys/ /dev/ /run/ /boot/; \
->  do mount --bind $i /mnt/$i; done```
+```
+[root@lvm ~]# for i in /proc/ /sys/ /dev/ /run/ /boot/; \
+>  do mount --bind $i /mnt/$i; done
+```
 
-```[root@lvm ~]# chroot /mnt/```
+```
+[root@lvm ~]# chroot /mnt/
+```
 
-```[root@lvm /]# grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+[root@lvm /]# grub2-mkconfig -o /boot/grub2/grub.cfg
 Generating grub configuration file ...
 Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
 Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
-done```
+done
+```
 
-```[root@lvm /]# cd /boot ; for i in `ls initramfs-*img`; \
+```
+[root@lvm /]# cd /boot ; for i in `ls initramfs-*img`; \
 >  do dracut -v $i `echo $i|sed "s/initramfs-//g; \
 > > s/.img//g"` --force; done
 sed: -e expression #1, char 18: unknown command: `>'
@@ -566,7 +619,8 @@ Skipping udev rule: 91-permissions.rules
 *** Store current command line parameters ***
 *** Creating image file ***
 *** Creating image file done ***
-*** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***```
+*** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***
+```
 
 Для выполнения следующего задания пока не перезагружаемся и не выходим из под chroot.
 
@@ -574,20 +628,27 @@ Skipping udev rule: 91-permissions.rules
 
 На свободных дисках создаю зеркало:
 
-```[root@lvm boot]# pvcreate /dev/sdc /dev/sdd
+```
+[root@lvm boot]# pvcreate /dev/sdc /dev/sdd
   Physical volume "/dev/sdc" successfully created.
-  Physical volume "/dev/sdd" successfully created.```
+  Physical volume "/dev/sdd" successfully created.
+```
 
-```[root@lvm boot]#  vgcreate vg_var /dev/sdc /dev/sdd
-  Volume group "vg_var" successfully created```
+```
+[root@lvm boot]#  vgcreate vg_var /dev/sdc /dev/sdd
+  Volume group "vg_var" successfully created
+```
 
-```[root@lvm boot]# lvcreate -L 950M -m1 -n lv_var vg_var
+```
+[root@lvm boot]# lvcreate -L 950M -m1 -n lv_var vg_var
   Rounding up size to full physical extent 952.00 MiB
-  Logical volume "lv_var" created.```
+  Logical volume "lv_var" created.
+```
 
 Создаю на нем ФС, монтирую и перемещаю туда /var:
 
-```[root@lvm boot]# mkfs.ext4 /dev/vg_var/lv_var
+```
+[root@lvm boot]# mkfs.ext4 /dev/vg_var/lv_var
 mke2fs 1.42.9 (28-Dec-2013)
 Filesystem label=
 OS type: Linux
@@ -607,51 +668,73 @@ Superblock backups stored on blocks:
 Allocating group tables: done                            
 Writing inode tables: done                            
 Creating journal (4096 blocks): done
-Writing superblocks and filesystem accounting information: done```
+Writing superblocks and filesystem accounting information: done
+```
 
-```[root@lvm boot]# mount /dev/vg_var/lv_var /mnt```
+```
+[root@lvm boot]# mount /dev/vg_var/lv_var /mnt
+```
 
-```[root@lvm boot]# cp -aR /var/* /mnt/```
+```
+[root@lvm boot]# cp -aR /var/* /mnt/
+```
 
 Cохраняю содержимое старого var:
 
-```[root@lvm boot]# mkdir /tmp/oldvar && mv /var/* /tmp/oldvar```
+```
+[root@lvm boot]# mkdir /tmp/oldvar && mv /var/* /tmp/oldvar
+```
 
 Монтирую новый var в каталог /var:
 
-```[root@lvm boot]# umount /mnt```
+```
+[root@lvm boot]# umount /mnt
+```
 
-```[root@lvm boot]# mount /dev/vg_var/lv_var /var```
+```
+[root@lvm boot]# mount /dev/vg_var/lv_var /var
+```
 
 Правлю fstab для автоматического монтирования /var:
 
-```[root@lvm boot]# echo "`blkid | grep var: | awk '{print $2}'` \
-> /var ext4 defaults 0 0" >> /etc/fstab```
+```
+[root@lvm boot]# echo "`blkid | grep var: | awk '{print $2}'` \
+> /var ext4 defaults 0 0" >> /etc/fstab
+```
 
 Перезагружаю ВМ.
 
 Удаляю временную VG:
 
-```[root@lvm ~]#  lvremove /dev/vg_root/lv_root
+```
+[root@lvm ~]#  lvremove /dev/vg_root/lv_root
 Do you really want to remove active logical volume vg_root/lv_root? [y/n]: y
-  Logical volume "lv_root" successfully removed```
+  Logical volume "lv_root" successfully removed
+```
 
-  ```[root@lvm ~]# vgremove /dev/vg_root
-  Volume group "vg_root" successfully removed```
-
-  ```[root@lvm ~]# pvremove /dev/sdb
-  Labels on physical volume "/dev/sdb" successfully wiped.```
+```
+[root@lvm ~]# vgremove /dev/vg_root
+  Volume group "vg_root" successfully removed
+```
+  
+```
+[root@lvm ~]# pvremove /dev/sdb
+  Labels on physical volume "/dev/sdb" successfully wiped.
+```
 
   ### **Выделить том под /home** ###
 
   Создаю логический том в VG /dev/VolGroup00/:
 
-  ```[root@lvm ~]#  lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
-  Logical volume "LogVol_Home" created.```
+```
+[root@lvm ~]#  lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
+  Logical volume "LogVol_Home" created.
+```
 
   Создаю на новом логическом томе файловую систему и монтирую:
 
-  ```[root@lvm ~]# mkfs.xfs /dev/VolGroup00/LogVol_Home
+```
+[root@lvm ~]# mkfs.xfs /dev/VolGroup00/LogVol_Home
 meta-data=/dev/VolGroup00/LogVol_Home isize=512    agcount=4, agsize=131072 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -660,36 +743,52 @@ data     =                       bsize=4096   blocks=524288, imaxpct=25
 naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
 log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
-realtime =none                   extsz=4096   blocks=0, rtextents=0```
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+```
 
-```[root@lvm ~]#  mount /dev/VolGroup00/LogVol_Home /mnt/```
+```
+[root@lvm ~]#  mount /dev/VolGroup00/LogVol_Home /mnt/
+```
 
 Перемещаю содержимое /home/ в /mnt/:
 
-```[root@lvm ~]# cp -aR /home/* /mnt/```
+```
+[root@lvm ~]# cp -aR /home/* /mnt/
+```
 
 Удаляю старый каталог /home/:
 
-```[root@lvm ~]# rm -rf /home/*```
+```
+[root@lvm ~]# rm -rf /home/*
+```
 
 Монтирую новый каталог /home/:
 
-```[root@lvm ~]# umount /mnt```
+```
+[root@lvm ~]# umount /mnt
+```
 
-```[root@lvm ~]# mount /dev/VolGroup00/LogVol_Home /home/```
+```
+[root@lvm ~]# mount /dev/VolGroup00/LogVol_Home /home/
+```
 
 Правлю fstab для автоматического монтирования /home:
 
-```[root@lvm ~]# echo "`blkid | grep Home | awk '{print $2}'` \
-> /home xfs defaults 0 0" >> /etc/fstab```
+```
+[root@lvm ~]# echo "`blkid | grep Home | awk '{print $2}'` \
+> /home xfs defaults 0 0" >> /etc/fstab
+```
 
 ### **Работа со снапшотами** ###
 
 Генерирую файлы в /home/:
 
-```[root@lvm ~]# touch /home/file{1..20}```
+```
+[root@lvm ~]# touch /home/file{1..20}
+```
 
-```[root@lvm ~]# ls -l /home
+```
+[root@lvm ~]# ls -l /home
 total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file1
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file10
@@ -711,19 +810,25 @@ total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file7
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file8
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file9
-drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant```
+drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant
+```
 
 Снимаю снапшот с логического тома:
 
-```[root@lvm ~]# lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
+```
+[root@lvm ~]# lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
   Rounding up size to full physical extent 128.00 MiB
-  Logical volume "home_snap" created.```
+  Logical volume "home_snap" created.
+```
 
 Симулирую частичную потерю файлов в каталоге:
 
-```[root@lvm ~]# rm -f /home/file{11..20}```
+```
+[root@lvm ~]# rm -f /home/file{11..20}
+```
 
-```[root@lvm ~]# ls -l /home
+```
+[root@lvm ~]# ls -l /home
 total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file1
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file10
@@ -735,21 +840,29 @@ total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file7
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file8
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file9
-drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant```
+drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant
+```
 
 Восстанавливаю состояние каталога из снапшота:
 
-```[root@lvm ~]# umount /home```
+```
+[root@lvm ~]# umount /home
+```
 
-```[root@lvm ~]# lvconvert --merge /dev/VolGroup00/home_snap
+```
+[root@lvm ~]# lvconvert --merge /dev/VolGroup00/home_snap
   Merging of volume VolGroup00/home_snap started.
-  VolGroup00/LogVol_Home: Merged: 100.00%```
+  VolGroup00/LogVol_Home: Merged: 100.00%
+```
 
-```[root@lvm ~]# mount /home```
+```
+[root@lvm ~]# mount /home
+```
 
 Проверяю результат восстановления:
 
-```[root@lvm ~]# ls -l /home
+```
+[root@lvm ~]# ls -l /home
 total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file1
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file10
@@ -771,4 +884,5 @@ total 0
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file7
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file8
 -rw-r--r--. 1 root    root     0 Mar 28 14:50 file9
-drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant```
+drwx------. 3 vagrant vagrant 74 May 12  2018 vagrant
+```
